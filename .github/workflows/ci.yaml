@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: package name
+        type: string
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      package:
+        description: package name
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+
+  vars:
+    runs-on: ubuntu-22.04
+    outputs:
+      old_version: ${{ steps.versions.outputs.old_version }}
+      new_version: ${{ steps.versions.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: |
+          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
+          chmod +x convco
+      - run: ./convco check
+      - id: versions
+        run: |
+          base_version_command="
+            ./convco
+            version
+            --prefix=${{ github.event.inputs.package }}/
+            --paths=packages/${{ github.event.inputs.package }}
+          "
+          echo "old_version=$($base_version_command)" >> "$GITHUB_OUTPUT"
+          echo "new_version=$($base_version_command --bump)" >> "$GITHUB_OUTPUT"
+
+  release:
+    runs-on: ubuntu-22.04
+    needs: vars
+    if:  ${{ needs.vars.outputs.old_version != needs.vars.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: |
+          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
+          chmod +x convco
+      - id: generate_changelogs
+        run: |
+          base_changelog_command="
+            ./convco
+            changelog
+            --prefix=${{ github.event.inputs.package}}/
+            --paths=packages/${{ github.event.inputs.package }}
+            --unreleased=${{ github.event.inputs.package }}/${{ needs.vars.outputs.new_version }}
+          "
+          echo "$base_changelog_command"
+          $base_changelog_command --max-versions=1 > CHANGELOG.md
+          $base_changelog_command > FULL_CHANGELOG.md
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.package }}/${{ needs.vars.outputs.new_version }}
+          files: FULL_CHANGELOG.md
+          body_path: CHANGELOG.md
