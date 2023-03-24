@@ -1,2 +1,2 @@
-def foo():
-    print('bar')
+def foo(n_times):
+    print('bar' * n_times)
