@@ -1,0 +1,16 @@
+name: Commit Check
+
+on: [push]
+
+jobs:
+  check_commits:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: |
+          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
+          chmod +x convco
+      - run: ls -la
+      - run: ./convco check
