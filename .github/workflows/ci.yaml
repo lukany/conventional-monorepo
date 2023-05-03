@@ -15,6 +15,9 @@ on:
         type: string
         required: true
 
+env:
+  CONVCO_VERSION: v0.4.0
+
 permissions:
   contents: write
 
@@ -29,14 +32,15 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: |
-          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
-          chmod +x convco
-      - run: ./convco check
+      - name: Install convco
+        run: |
+          curl -sSfL "https://github.com/convco/convco/releases/download/${{ env.CONVCO_VERSION }}/convco-ubuntu.zip" | zcat > /usr/local/bin/convco
+          chmod +x /usr/local/bin/convco
+      - run: convco check
       - id: versions
         run: |
           base_version_command="
-            ./convco
+            convco
             version
             --prefix=${{ github.event.inputs.package }}/
             --paths=packages/${{ github.event.inputs.package }}
@@ -52,13 +56,14 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: |
-          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
-          chmod +x convco
+      - name: Install convco
+        run: |
+          curl -sSfL "https://github.com/convco/convco/releases/download/${{ env.CONVCO_VERSION }}/convco-ubuntu.zip" | zcat > /usr/local/bin/convco
+          chmod +x /usr/local/bin/convco
       - id: generate_changelogs
         run: |
           base_changelog_command="
-            ./convco
+            convco
             changelog
             --prefix=${{ github.event.inputs.package}}/
             --paths=packages/${{ github.event.inputs.package }}

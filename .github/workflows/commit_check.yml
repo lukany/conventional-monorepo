@@ -2,6 +2,9 @@ name: Commit Check
 
 on: [push]
 
+env:
+  CONVCO_VERSION: v0.4.0
+
 jobs:
   check_commits:
     runs-on: ubuntu-22.04
@@ -9,8 +12,9 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: |
-          curl -sSfL https://github.com/convco/convco/releases/download/v0.4.0/convco-ubuntu.zip | zcat > convco
-          chmod +x convco
-      - run: ls -la
-      - run: ./convco check
+      - name: Install convco
+        run: |
+          curl -sSfL "https://github.com/convco/convco/releases/download/${{ env.CONVCO_VERSION }}/convco-ubuntu.zip" | zcat > /usr/local/bin/convco
+          chmod +x /usr/local/bin/convco
+      - name: Check commits
+        run: convco check
